@@ -1,53 +1,55 @@
-<style>
-:root {  
-  --steelers-gold: #FFB612; 
-  --steelers-silver: #A5ACAF;  
-  --black: #101820; 
-  --white: #FFFFFF;
-}
-/* ... updated UI styles ... */
-#hud .title { font-family:'Bebas Neue',cursive; font-size:22px; color:var(--steelers-gold); }
-.btn { background:var(--steelers-gold); color:var(--black); border: 2px solid var(--white); }
-</style>
-
-<div class="overlay" id="start-overlay">
-  <h1>ROGERS RINGS</h1>
-  <h2>STEEL CITY RUNNER</h2>
-  <div id="shop-container" style="margin: 15px 0; border: 1px solid var(--steelers-gold); padding: 10px;">
-    <div style="font-size: 10px; margin-bottom: 5px;">DREW'S GEAR SHOP</div>
-    <button class="btn-sm" onclick="buyBuff('shield', 25)">BUY SHIELD (25🪙)</button>
-  </div>
-  <button class="btn" id="startBtn">KICKOFF</button>
-</div>
-
-<script>
-// Logic for Rogers Rings
-const QUOTES = [
-  '"Stairway to Seven."', '"Terrible Towel power."', '"Defense wins championships."',
-];
-
-function update(dt) {
-  if (gameState !== 'playing') return;
-  
-  // DT Fixed Scoring
-  score += (0.15 * (speed / 5)) * (dt || 1);
-  
-  // Obstacles are now "Rings"
-  obstacles.forEach(o => {
-    o.x -= speed * (dt || 1);
-    // Draw logic now renders a Silver Ring instead of a butterfly
-  });
-}
-
-function buyBuff(type, cost) {
-  if (save.coins >= cost) {
-    save.coins -= cost;
-    if(type === 'shield') player.shield = true;
-    writeSave(save);
-    showNotif("GEAR EQUIPPED!");
-    document.getElementById('coins-display').textContent = '🪙 ' + save.coins;
-  } else {
-    showNotif("NOT ENOUGH COINS");
-  }
-}
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rogers Rings — Steel City Runner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+        :root {
+            --steelers-gold: #FFB612;
+            --steelers-silver: #A5ACAF;
+            --black: #101820;
+            --white: #FFFFFF;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html, body { width:100%; height:100%; overflow:hidden; background:var(--black); color:var(--white); font-family:'Space Mono', monospace; }
+        body { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #gw { position:relative; width:min(800px,100vw); }
+        #hud { display:flex; justify-content:space-between; align-items:center; padding:8px; font-size:10px; color:var(--steelers-gold); text-transform:uppercase; }
+        #hud .title { font-family:'Bebas Neue',cursive; font-size:24px; color:var(--steelers-gold); letter-spacing:2px; }
+        #canvas-container { position:relative; border:3px solid var(--steelers-gold); background:#000; }
+        canvas { display:block; width:100%; height:auto; }
+        .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(16,24,32,0.92); z-index:20; }
+        .hidden { display:none; }
+        h1 { font-family:'Bebas Neue',cursive; font-size:clamp(48px,12vw,80px); color:var(--steelers-gold); }
+        .btn { margin-top:15px; padding:12px 40px; background:var(--steelers-gold); color:var(--black); font-family:'Bebas Neue',cursive; font-size:22px; border:2px solid var(--white); cursor:pointer; clip-path:polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
+    </style>
+</head>
+<body>
+    <div id="gw">
+        <div id="hud">
+            <span class="title">ROGERS RINGS</span>
+            <span id="score-display">SCORE: 0</span>
+            <span id="coins-display">🪙 0</span>
+        </div>
+        <div id="canvas-container">
+            <canvas id="gameCanvas" width="800" height="320"></canvas>
+            <div class="overlay" id="start-overlay">
+                <h1>ROGERS RINGS</h1>
+                <div id="shop-container" style="border: 1px solid var(--steelers-gold); padding: 10px; margin: 10px;">
+                    <div style="font-size: 10px; margin-bottom: 5px; color: var(--steelers-gold);">DREW'S GEAR SHOP</div>
+                    <button style="padding: 5px 10px; cursor: pointer;" onclick="buyBuff('shield', 25)">BUY SHIELD (25🪙)</button>
+                </div>
+                <button class="btn" id="startBtn">KICKOFF</button>
+            </div>
+            <div class="overlay hidden" id="death-overlay">
+                <h1 style="color:var(--steelers-silver)">DOWNED</h1>
+                <div id="death-stats" style="color:var(--steelers-gold); margin: 10px;"></div>
+                <button class="btn" onclick="location.reload()">RUN IT BACK</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
