@@ -1,0 +1,53 @@
+<style>
+:root {  
+  --steelers-gold: #FFB612; 
+  --steelers-silver: #A5ACAF;  
+  --black: #101820; 
+  --white: #FFFFFF;
+}
+/* ... updated UI styles ... */
+#hud .title { font-family:'Bebas Neue',cursive; font-size:22px; color:var(--steelers-gold); }
+.btn { background:var(--steelers-gold); color:var(--black); border: 2px solid var(--white); }
+</style>
+
+<div class="overlay" id="start-overlay">
+  <h1>ROGERS RINGS</h1>
+  <h2>STEEL CITY RUNNER</h2>
+  <div id="shop-container" style="margin: 15px 0; border: 1px solid var(--steelers-gold); padding: 10px;">
+    <div style="font-size: 10px; margin-bottom: 5px;">DREW'S GEAR SHOP</div>
+    <button class="btn-sm" onclick="buyBuff('shield', 25)">BUY SHIELD (25🪙)</button>
+  </div>
+  <button class="btn" id="startBtn">KICKOFF</button>
+</div>
+
+<script>
+// Logic for Rogers Rings
+const QUOTES = [
+  '"Stairway to Seven."', '"Terrible Towel power."', '"Defense wins championships."',
+];
+
+function update(dt) {
+  if (gameState !== 'playing') return;
+  
+  // DT Fixed Scoring
+  score += (0.15 * (speed / 5)) * (dt || 1);
+  
+  // Obstacles are now "Rings"
+  obstacles.forEach(o => {
+    o.x -= speed * (dt || 1);
+    // Draw logic now renders a Silver Ring instead of a butterfly
+  });
+}
+
+function buyBuff(type, cost) {
+  if (save.coins >= cost) {
+    save.coins -= cost;
+    if(type === 'shield') player.shield = true;
+    writeSave(save);
+    showNotif("GEAR EQUIPPED!");
+    document.getElementById('coins-display').textContent = '🪙 ' + save.coins;
+  } else {
+    showNotif("NOT ENOUGH COINS");
+  }
+}
+</script>
