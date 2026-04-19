@@ -4,31 +4,86 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Steel City Rings</title>
+
 <style>
-:root{--black:#101820;--gold:#FFB612;--silver:#A5ACAF;--turf:#1a331a}
+:root{
+  --black:#101820;
+  --gold:#FFB612;
+  --silver:#A5ACAF;
+  --turf:#1a331a;
+}
+
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:#000;color:var(--gold);font-family:monospace;overscroll-behavior:none;touch-action:none}
-#cabinet{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:10px;background:radial-gradient(#1a1f26,#000)}
-#crt{position:relative;width:100%;max-width:900px;aspect-ratio:860/300;background:var(--black);border:6px solid var(--gold);overflow:hidden}
-canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
-.overlay{position:absolute;inset:0;background:rgba(16,24,32,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+html,body{
+  margin:0;
+  height:100%;
+  background:#000;
+  color:var(--gold);
+  font-family:monospace;
+  overscroll-behavior:none;
+  touch-action:none;
+}
+
+#cabinet{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:10px;
+  background:radial-gradient(#1a1f26,#000);
+}
+
+#crt{
+  position:relative;
+  width:100%;
+  max-width:900px;
+  aspect-ratio:860/300;
+  background:var(--black);
+  border:6px solid var(--gold);
+  overflow:hidden;
+}
+
+canvas{
+  width:100%;
+  height:100%;
+  display:block;
+  image-rendering:pixelated;
+}
+
+.overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(16,24,32,.96);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--gold);
+}
+
 .hidden{display:none}
-.btn{background:#000;border:2px solid var(--gold);color:var(--gold);padding:10px 16px;cursor:pointer}
+
+.btn{
+  background:#000;
+  border:2px solid var(--gold);
+  color:var(--gold);
+  padding:10px 14px;
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
 <div id="cabinet">
 <div id="crt">
+
 <canvas id="game" width="860" height="300"></canvas>
 
 <div id="start" class="overlay">
-<h1>STEEL CITY RINGS</h1>
-<button class="btn" id="btnPlay">PLAY</button>
+  <button class="btn" id="play">PLAY</button>
 </div>
 
 <div id="death" class="overlay hidden">
-<h2>GAME OVER</h2>
-<button class="btn" id="btnAgain">RETRY</button>
+  <button class="btn" id="again">RETRY</button>
 </div>
 
 </div>
@@ -37,48 +92,213 @@ canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
 <script>
 (()=>{
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-let rafId=null, paused=false;
-let shake=0, hitStop=0;
-
-let player, obstacles=[], distance=0;
-let thrustHeld=false, inputBuffer=0, coyote=0;
+let player, obstacles=[], rings=[];
+let thrustHeld=false;
+let distance=0;
 
 const GROUND=260;
 
-function reset(){
-  player={x:120,y:GROUND,vy:0,onGround:true};
-  obstacles=[];
-  distance=0;
+/* ---------------- DDD v2 ---------------- */
+
+let DDD={
+  pressure:0,
+  state:"flow",
+  timer:0,
+  lastEvent:0
+};
+
+function updatePressure(dt){
+  const base = distance/2200;
+  const survival = Math.min(1, DDD.timer/40);
+  DDD.pressure = Math.min(1, base*0.65 + survival*0.35);
 }
 
-function spawn(){
+function updateState(){
+  const p=DDD.pressure;
+
+  if(p<0.25) DDD.state="flow";
+  else if(p<0.45) DDD.state="ramp";
+  else if(p<0.7) DDD.state="pressure";
+  else if(p<0.9) DDD.state="spike";
+  else DDD.state="panic";
+}
+
+/* ---------------- AUDIO ---------------- */
+
+let audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+let reverbDelay,reverbGain,reverbFilter;
+
+function initReverb(){
+  if(reverbDelay) return;
+
+  reverbDelay=audioCtx.createDelay();
+  reverbDelay.delayTime.value=0.18;
+
+  reverbGain=audioCtx.createGain();
+  reverbGain.gain.value=0.35;
+
+  reverbFilter=audioCtx.createBiquadFilter();
+  reverbFilter.frequency.value=1800;
+
+  reverbDelay.connect(reverbFilter);
+  reverbFilter.connect(reverbGain);
+  reverbGain.connect(reverbDelay);
+}
+
+function playSound({freq=440,duration=0.1,type="sine",volume=0.08,pitchDrop=0,filterFreq=1200}){
+
+  const t=audioCtx.currentTime;
+
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  const f=audioCtx.createBiquadFilter();
+
+  o.type=type;
+  o.frequency.setValueAtTime(freq,t);
+
+  if(pitchDrop){
+    o.frequency.exponentialRampToValueAtTime(Math.max(40,freq-pitchDrop),t+duration);
+  }
+
+  f.type="lowpass";
+  f.frequency.value=filterFreq;
+
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(volume,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+duration);
+
+  o.connect(f);
+  f.connect(g);
+  g.connect(audioCtx.destination);
+
+  initReverb();
+  g.connect(reverbDelay);
+
+  o.start();
+  o.stop(t+duration);
+}
+
+const sfx={
+  thrust:()=>playSound({freq:200,duration:0.05,type:"triangle",volume:0.03,pitchDrop:20}),
+  ring:()=>{
+    playSound({freq:950,duration:0.1,volume:0.07});
+    setTimeout(()=>playSound({freq:1400,duration:0.12,volume:0.04}),40);
+    setTimeout(()=>playSound({freq:700,duration:0.18,volume:0.03}),60);
+  },
+  hit:()=>playSound({freq:140,duration:0.2,type:"sawtooth",volume:0.09,pitchDrop:80})
+};
+
+/* ---------------- SPAWN SYSTEM ---------------- */
+
+let lastPatternType="simple";
+
+function spawnSmartRings(){
+
+  const p=DDD.pressure;
+
+  let y=GROUND-(80+Math.random()*60);
+
+  switch(lastPatternType){
+    case "lowCluster": y=GROUND-(120+Math.random()*40);break;
+    case "blitzerMix": y=GROUND-(60+Math.random()*120);break;
+    case "denseRun": y=GROUND-(140+Math.random()*40);break;
+  }
+
+  const count = p<0.3?3:p<0.6?4:p<0.85?5:6;
+
+  for(let i=0;i<count;i++){
+    rings.push({
+      x:860+i*26,
+      y:y+Math.sin(i)*6,
+      r:7,
+      a:0
+    });
+  }
+}
+
+/* ---------------- DIRECTOR ---------------- */
+
+function spawnPatternDirected(){
+
+  const s=DDD.state;
+
+  if(s==="flow"){
+    obstacles.push({x:860,y:GROUND,w:20,h:30});
+    lastPatternType="simple";
+  }
+
+  else if(s==="ramp"){
+    Math.random()<0.5 ? spawnLow() : spawnGap();
+    lastPatternType="lowCluster";
+  }
+
+  else if(s==="pressure"){
+    spawnMix();
+    lastPatternType="blitzerMix";
+  }
+
+  else if(s==="spike"){
+    spawnDense();
+    lastPatternType="denseRun";
+  }
+
+  else{
+    spawnDense();
+    spawnMix();
+    lastPatternType="panic";
+  }
+
+  spawnSmartRings();
+}
+
+function spawnLow(){
   obstacles.push({x:860,y:GROUND,w:20,h:30});
+  obstacles.push({x:890,y:GROUND,w:20,h:30});
+}
+
+function spawnGap(){
+  if(Math.random()<0.4) return;
+  obstacles.push({x:860,y:GROUND,w:20,h:30});
+}
+
+function spawnMix(){
+  obstacles.push({x:860,y:GROUND,w:20,h:30});
+  if(Math.random()<0.5) obstacles.push({x:900,y:GROUND-40,w:20,h:40});
+}
+
+function spawnDense(){
+  for(let i=0;i<3;i++){
+    obstacles.push({x:860+i*22,y:GROUND,w:20,h:30});
+  }
+}
+
+/* ---------------- GAME ---------------- */
+
+function reset(){
+  player={x:120,y:GROUND,vy:0,onGround:true};
+  obstacles=[];rings=[];
+  distance=0;
+  DDD.timer=0;
 }
 
 function update(dt){
 
-  coyote = player.onGround ? 0.1 : Math.max(0,coyote-dt);
-  inputBuffer = Math.max(0,inputBuffer-dt);
+  DDD.timer+=dt;
+  updatePressure(dt);
+  updateState();
 
-  // JUMP
-  if(inputBuffer>0 && (player.onGround||coyote>0)){
-    player.vy=-520;
-    player.onGround=false;
-    inputBuffer=0;
-    coyote=0;
-    sfx.thrust();
+  DDD.lastEvent-=dt;
+
+  if(DDD.lastEvent<=0){
+    spawnPatternDirected();
+    DDD.lastEvent=0.6-DDD.pressure*0.35;
   }
 
-  // THRUST ASSIST
-  if(thrustHeld && player.vy<0){
-    player.vy-=700*dt;
-  }
-
-  // GRAVITY
-  player.vy+=1850*dt;
+  player.vy+=1800*dt;
   player.y+=player.vy*dt;
 
   if(player.y>=GROUND){
@@ -87,107 +307,54 @@ function update(dt){
     player.onGround=true;
   }
 
-  // obstacles
   obstacles.forEach(o=>o.x-=220*dt);
-
-  if(Math.random()<0.02) spawn();
-
-  obstacles.forEach(o=>{
-    if(Math.abs(o.x-player.x)<20 && Math.abs(o.y-player.y)<20){
-      shake=10;
-      hitStop=0.06;
-      reset();
-    }
-  });
+  rings.forEach(r=>r.x-=220*dt);
 
   distance+=dt*100;
 }
 
+/* ---------------- RENDER ---------------- */
+
 function render(){
-
-  ctx.save();
-
-  if(shake>0){
-    ctx.translate((Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
-    shake*=0.9;
-  }
 
   ctx.fillStyle="#000";
   ctx.fillRect(0,0,860,300);
 
-  // player
-  ctx.fillStyle="#FFB612";
-  ctx.fillRect(player.x,player.y-20,20,20);
+  ctx.fillStyle="#1a331a";
+  ctx.fillRect(0,260,860,40);
 
-  // obstacles
   ctx.fillStyle="#A5ACAF";
   obstacles.forEach(o=>ctx.fillRect(o.x,o.y-20,o.w,o.h));
 
-  ctx.restore();
+  ctx.fillStyle="#FFB612";
+  rings.forEach(r=>ctx.fillRect(r.x,r.y,10,10));
+
+  ctx.fillStyle="#FFB612";
+  ctx.fillRect(player.x,player.y-20,20,20);
+
+  // heat shimmer
+  if(thrustHeld && !player.onGround){
+    ctx.globalAlpha=0.08;
+    ctx.fillRect(player.x-30,player.y-10,60,30);
+    ctx.globalAlpha=1;
+  }
 }
 
-function loop(t){
-  if(paused)return;
+/* ---------------- LOOP ---------------- */
 
-  const dt=0.016;
-
-  if(hitStop>0){
-    hitStop-=dt;
-    render();
-    rafId=requestAnimationFrame(loop);
-    return;
-  }
-
-  update(dt);
+function loop(){
+  update(0.016);
   render();
-  rafId=requestAnimationFrame(loop);
+  requestAnimationFrame(loop);
 }
 
-function togglePause(){
-  paused=!paused;
-  if(paused){
-    cancelAnimationFrame(rafId);
-  }else{
-    rafId=requestAnimationFrame(loop);
-  }
-}
+/* ---------------- INPUT ---------------- */
 
-// AUDIO
-let audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-
-function beep(freq,dur,type='sine',vol=0.08){
-  const o=audioCtx.createOscillator();
-  const g=audioCtx.createGain();
-  const f=audioCtx.createBiquadFilter();
-
-  o.type=type;
-  o.frequency.value=freq;
-
-  f.type='lowpass';
-  f.frequency.value=1200;
-
-  g.gain.setValueAtTime(0.0001,audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(vol,audioCtx.currentTime+0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+dur);
-
-  o.connect(f);
-  f.connect(g);
-  g.connect(audioCtx.destination);
-
-  o.start();
-  o.stop(audioCtx.currentTime+dur+0.05);
-}
-
-const sfx={
-  thrust:()=>beep(200,0.05,'triangle',0.03),
-  hit:()=>beep(120,0.2,'sawtooth',0.08)
-};
-
-// INPUT
 window.addEventListener("keydown",e=>{
   if(e.code==="Space"){
     thrustHeld=true;
-    inputBuffer=0.1;
+    player.vy=-450;
+    sfx.thrust();
   }
 });
 
@@ -195,22 +362,18 @@ window.addEventListener("keyup",e=>{
   if(e.code==="Space") thrustHeld=false;
 });
 
-// UI
-document.getElementById("btnPlay").onclick=()=>{
+/* ---------------- START ---------------- */
+
+document.getElementById("play").onclick=()=>{
   reset();
   document.getElementById("start").classList.add("hidden");
-  rafId=requestAnimationFrame(loop);
-};
-
-document.getElementById("btnAgain").onclick=()=>{
-  reset();
-  document.getElementById("death").classList.add("hidden");
-  rafId=requestAnimationFrame(loop);
+  loop();
 };
 
 reset();
 
 })();
 </script>
+
 </body>
 </html>
