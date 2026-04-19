@@ -1,568 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Rogers Rings — Steel City Runner</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Steel City Rings</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700&display=swap');
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --steelers-gold:#FFB612; --steelers-silver:#A5ACAF; --black:#101820; --white:#FFFFFF;
-  --turf:#0a1c0a; --rust:#8B2500;
-}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--black);font-family:'Space Mono',monospace}
-
-#shell{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;}
-#wrapper{position:relative;width:min(860px,100vw)}
-
-/* TOP BAR */
-#topbar{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 12px;background:#050a0f;border-bottom:2px solid var(--steelers-gold);
-}
-.logo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:3px;color:var(--white);}
-.logo span{color:var(--steelers-gold)}
-#stats{display:flex;gap:15px;font-size:12px;color:var(--steelers-silver);text-transform:uppercase}
-#stats b{color:var(--white);}
-
-/* CANVAS */
-#cvs-wrap{position:relative;overflow:hidden;background:var(--black);}
-canvas{display:block;width:100%;height:auto}
-
-/* RHYTHM BAR & COMBO */
-#rhythm-bar{
-  position:absolute;bottom:0;left:0;right:0;height:4px;z-index:15;pointer-events:none;
-  background:transparent;overflow:hidden; border-top: 1px solid #333;
-}
-#rhythm-fill{height:100%;background:var(--steelers-gold);width:0%;transition:width 0.05s linear}
-
-#combo-display{
-  position:absolute;top:10px;right:15px;z-index:15;pointer-events:none;
-  font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;
-  color:var(--steelers-gold);opacity:0;transition:opacity 0.3s;text-align:right
-}
-
-/* OVERLAYS */
-.ov{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;z-index:30;
-  background:rgba(16,24,32,0.95);transition:opacity 0.3s;
-}
-.ov.gone{opacity:0;pointer-events:none}
-.ov h1{font-family:'Bebas Neue',cursive;font-size:clamp(52px,12vw,88px);color:var(--white);letter-spacing:4px;}
-.ov h1 em{color:var(--steelers-gold);font-style:normal}
-.bigbtn{
-  margin-top:10px;padding:12px 40px;background:var(--steelers-gold);color:var(--black);
-  font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:2px;border:2px solid var(--white);
-  cursor:pointer;transition:all 0.15s;clip-path:polygon(5% 0, 100% 0, 95% 100%, 0 100%);
-}
-.bigbtn:hover{background:var(--white);color:var(--black);}
-
-/* SHOP UI */
-.shop-container {
-  border: 1px solid var(--steelers-gold); padding: 12px; margin: 15px 0;
-  background: rgba(255,182,18,0.05); display: flex; flex-direction: column; gap: 8px; align-items: center;
-}
-.shop-row { display: flex; gap: 10px; }
-.shop-btn {
-  background: transparent; border: 1px solid var(--steelers-gold); color: var(--steelers-gold);
-  font-family: 'Bebas Neue', cursive; font-size: 18px; padding: 6px 12px; cursor: pointer; transition: all 0.2s;
-}
-.shop-btn:hover { background: var(--steelers-gold); color: var(--black); }
-
-/* NOTIFS */
-#notifs{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:5px; pointer-events:none;}
-.notif{
-  background:var(--steelers-gold);color:var(--black);
-  font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;
-  padding:4px 16px;animation:nfade 2s forwards; clip-path:polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
-}
-@keyframes nfade{0%{opacity:0;transform:translateY(-10px)}15%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0}}
-
-/* LEADERBOARD */
-#lb-display {
-  margin-top: 15px; font-size: 11px; color: var(--steelers-silver); letter-spacing: 1px; text-align: center; max-width: 300px; line-height: 1.6;
-}
-
-/* MOBILE TOUCH HINTS */
-#touch-hints {
-  display: flex; justify-content: space-between; width: 100%; padding: 0 40px; margin-top: 15px;
-  font-size: 10px; color: var(--steelers-silver); text-align: center;
-}
-@media(pointer:fine){ #touch-hints { display: none; } }
+:root{--black:#101820;--gold:#FFB612;--silver:#A5ACAF;--turf:#1a331a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--gold);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;overscroll-behavior:none;touch-action:none}
+#cabinet{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:10px;background:radial-gradient(#1a1f26,#000)}
+#crt{position:relative;width:100%;max-width:900px;aspect-ratio:860/300;background:var(--black);border:6px solid var(--gold);box-shadow:0 0 0 4px #000,0 0 40px rgba(255,182,18,.25),inset 0 0 30px rgba(0,0,0,.8);overflow:hidden}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.scanlines{pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18)0 1px,transparent 1px 3px);mix-blend-mode:multiply;opacity:.55}
+.hud{position:absolute;top:6px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;font-size:14px;text-shadow:0 1px 0 #000,0 0 6px #000;letter-spacing:1px}
+.hud b{color:var(--silver)}
+#powers{position:absolute;top:28px;right:8px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+.pwr{background:rgba(16,24,32,.9);border:2px solid var(--gold);padding:3px 5px;display:flex;align-items:center;gap:5px;min-width:78px}
+.pwr .ico{width:16px;height:16px;display:grid;place-items:center;font-size:12px}
+.pwr .bar{width:52px;height:5px;background:#000;border:1px solid var(--silver);position:relative;overflow:hidden}
+.pwr .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--gold)}
+.overlay{position:absolute;inset:0;background:rgba(16,24,32,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:18px}
+.overlay.hidden{display:none}
+h1{margin:0;font-size:38px;letter-spacing:4px;color:var(--gold);text-shadow:0 0 10px rgba(255,182,18,.4),3px 3px 0 #000}
+h2{margin:0 0 6px;font-size:22px;color:var(--silver);letter-spacing:2px}
+.btn{background:var(--black);color:var(--gold);border:3px solid var(--gold);padding:12px 22px;font:inherit;font-size:15px;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 0 #000,inset 0 0 0 2px rgba(0,0,0,.5);text-transform:uppercase}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #000}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.small{font-size:12px;color:var(--silver);opacity:.85}
+.shop-list{width:100%;max-width:560px;display:flex;flex-direction:column;gap:8px;max-height:58%;overflow:auto;padding-right:4px}
+.shop-item{display:flex;align-items:center;gap:8px;background:#000;border:2px solid var(--silver);padding:8px 10px}
+.shop-item .info{flex:1;text-align:left}
+.shop-item .name{color:var(--gold)}
+.shop-item .desc{color:var(--silver);font-size:12px}
+.shop-item .cost{min-width:64px;text-align:right;color:var(--gold)}
+.lead-list{width:100%;max-width:340px;background:#000;border:2px solid var(--silver);padding:10px;text-align:left}
+.lead-list div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #222;font-size:14px}
+.lead-list div:last-child{border:0}
+input.name{background:#000;color:var(--gold);border:2px solid var(--gold);padding:8px;font:inherit;width:160px;text-align:center;text-transform:uppercase}
+.touch-hint{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:11px;color:var(--silver);opacity:.7;pointer-events:none}
+@media(max-width:640px){h1{font-size:28px}.hud{font-size:12px}.btn{padding:10px 16px;font-size:14px}}
 </style>
 </head>
 <body>
-<div id="shell">
-<div id="wrapper">
-  
-  <div id="topbar">
-    <div class="logo">ROGERS <span>RINGS</span></div>
-    <div id="stats">
-      <span>score <b id="s-score">0</b></span>
-      <span>best <b id="s-best">0</b></span>
-      <span>🪙 <b id="s-coins">0</b></span>
+<div id="cabinet">
+ <div id="crt">
+  <canvas id="game" width="860" height="300"></canvas>
+  <div class="scanlines"></div>
+  <div class="hud"><div>YARDS <b id="yards">0</b></div><div>RINGS <b id="ringsHUD">0</b></div><div>HI <b id="best">0</b></div></div>
+  <div id="powers"></div>
+  <div class="touch-hint">TAP/HOLD = THRUST • SWIPE DOWN = SLIDE</div>
+
+  <div id="start" class="overlay">
+    <h1>STEEL CITY RINGS</h1>
+    <div class="small">MILL YARD ENDLESS RUNNER</div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="btnPlay">PLAY</button>
+      <button class="btn" id="btnShop">SHOP</button>
+      <button class="btn" id="btnLead">LEADERBOARD</button>
+    </div>
+    <div class="small" id="saveInfo"></div>
+  </div>
+
+  <div id="death" class="overlay hidden">
+    <h2>DRIVE ENDED</h2>
+    <div>YARDS: <b id="endYards">0</b> • RINGS: <b id="endRings">0</b></div>
+    <div class="row">
+      <button class="btn" id="btnAgain">NEW DRIVE</button>
+      <button class="btn" id="btnToShop">SHOP</button>
     </div>
   </div>
 
-  <div id="cvs-wrap">
-    <canvas id="gc" width="860" height="300"></canvas>
-    
-    <div id="rhythm-bar"><div id="rhythm-fill"></div></div>
-    <div id="combo-display">COMBO ×<span id="combo-num">1</span></div>
-    <div id="notifs"></div>
-
-    <div class="ov" id="ov-start">
-      <h1>STEEL CITY <em>RUNNER</em></h1>
-      
-      <div class="shop-container">
-        <div style="font-size:12px; color:var(--steelers-gold); font-family:'Bebas Neue', cursive; letter-spacing: 2px;">PLAYER GEAR SHOP</div>
-        <div class="shop-row">
-            <button class="shop-btn" onclick="buyBuff('shield', 25)">🛡 SHIELD (25🪙)</button>
-            <button class="shop-btn" onclick="buyBuff('cleats', 75)">👟 CLEATS (75🪙)</button>
-        </div>
-      </div>
-      
-      <button class="bigbtn" id="btn-start">KICKOFF</button>
-      
-      <div id="touch-hints">
-          <div><br>← TAP LEFT<br>OR SWIPE DOWN<br>TO SLIDE</div>
-          <div><br>TAP RIGHT →<br>OR SWIPE UP<br>TO JUMP</div>
-      </div>
-      <div style="font-size: 10px; color: #555; margin-top: 10px; display: none;" id="desk-hint">SPACE / ↑ to Jump · ↓ to Slide · Time jumps to the beat</div>
-
-      <div id="lb-display"></div>
-    </div>
-
-    <div class="ov gone" id="ov-dead">
-      <h1 style="color:var(--steelers-silver)">DOWNED</h1>
-      <div style="font-family:'Bebas Neue', cursive; font-size: 32px; color: var(--steelers-gold); margin: 10px 0;" id="d-score">0</div>
-      <div style="font-size: 12px; color: var(--white); margin-bottom: 20px;">
-          COINS: <span id="d-coins">0</span> &nbsp;|&nbsp; COMBO: <span id="d-combo">x1</span>
-      </div>
-      <button class="bigbtn" onclick="location.reload()">RUN IT BACK</button>
-    </div>
-
+  <div id="shop" class="overlay hidden">
+    <h2>UPGRADE SHOP</h2>
+    <div>RINGS BANK: <b id="bank">0</b></div>
+    <div class="shop-list" id="shopList"></div>
+    <button class="btn" id="btnShopBack">BACK</button>
   </div>
-</div>
+
+  <div id="leader" class="overlay hidden">
+    <h2>LOCAL TOP DRIVES</h2>
+    <div class="lead-list" id="leadList"></div>
+    <div class="row">
+      <input id="playerName" class="name" maxlength="8" placeholder="NAME">
+      <button class="btn" id="btnSubmitOnline" disabled>SUBMIT ONLINE</button>
+    </div>
+    <button class="btn" id="btnLeadBack">BACK</button>
+    <div class="small">Online disabled — add Firebase in code</div>
+  </div>
+ </div>
 </div>
 
 <script>
-// --- PERSISTENCE ---
-const SAVE_KEY = 'rogers_rings_final';
-let save = JSON.parse(localStorage.getItem(SAVE_KEY)) || { hiScore: 0, coins: 50, topScores: [] };
-function writeSave() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+(()=>{ 'use strict';
 
-// --- AUDIO (Stadium Drumline) ---
-let AC = null, playing = false, beatTimer = null, stepIndex = 0;
-let onBeat = false;
+// ===== INIT =====
+const VERSION=4, WIDTH=860, HEIGHT=300, GROUND_H=42, GROUND_Y=HEIGHT-GROUND_H;
+const C={black:'#101820',gold:'#FFB612',silver:'#A5ACAF',turf:'#1a331a'};
+const canvas=document.getElementById('game'), ctx=canvas.getContext('2d',{alpha:false}); ctx.imageSmoothingEnabled=false;
+const $=id=>document.getElementById(id);
+const ui={yards:$('yards'),ringsHUD:$('ringsHUD'),best:$('best'),powers:$('powers'),start:$('start'),death:$('death'),shop:$('shop'),leader:$('leader'),endYards:$('endYards'),endRings:$('endRings'),bank:$('bank'),shopList:$('shopList'),leadList:$('leadList'),playerName:$('playerName'),saveInfo:$('saveInfo')};
 
-// Drumline pattern: Heavy kicks, snappy marching snares
-const pattern = {
-    k: [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,1,0], // Kick
-    s: [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0], // Snare
-    c: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]  // Crash/Whistle
-};
+let state='menu',lastTime=0,paused=false;
+let distance=0,scoreYards=0,runRings=0,speed=220,speedMult=1;
+let thrustHeld=false,slideHeld=false,inputBuffer=0,coyote=0;
+const COYOTE_TIME=0.08, BUFFER_TIME=0.12;
+let player=null,obstacles=[],rings=[],powerups=[],particles=[],actives=[],patternQueue=[],spawnDist=0,pwrTimer=0;
 
-function initAC() {
-    if(AC) return;
-    AC = new (window.AudioContext || window.webkitAudioContext)();
+// ===== SAVE =====
+function defaultSave(){return{version:VERSION,hiScore:0,rings:200,upgrades:{cleats:0,magnet:0,shield:0,extraLife:0},topScores:[],playerName:'RUNNER'}}
+function loadSave(){try{const r=localStorage.getItem('steelCityRings_v4');if(!r)return defaultSave();const d=JSON.parse(r);if(d.version!==VERSION)return{...defaultSave(),...d,version:VERSION};return {...defaultSave(),...d}}catch(e){return defaultSave()}}
+function saveGame(){localStorage.setItem('steelCityRings_v4',JSON.stringify(save))}
+let save=loadSave(); ui.playerName.value=save.playerName;
+
+// ===== AUDIO =====
+let audioCtx=null;
+function initAudio(){if(audioCtx)return;try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+function beep(f,d,t='square',v=0.07){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d+0.02)}
+const sfx={thrust:()=>beep(190+Math.random()*50,0.035,'square',0.022),ring:()=>{beep(820,0.06);setTimeout(()=>beep(1240,0.06),70)},hit:()=>{beep(210,0.16,'sawtooth',0.09);setTimeout(()=>beep(110,0.2,'sawtooth',0.08),80)},power:()=>{beep(620,0.07);setTimeout(()=>beep(900,0.07),80);setTimeout(()=>beep(1220,0.1),160)}};
+
+// ===== INPUT =====
+window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){thrustHeld=true;inputBuffer=BUFFER_TIME;initAudio();e.preventDefault()}if(['ArrowDown','KeyS'].includes(e.code)){slideHeld=true;e.preventDefault()}if(e.code==='KeyP')togglePause()});
+window.addEventListener('keyup',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code))thrustHeld=false;if(['ArrowDown','KeyS'].includes(e.code))slideHeld=false});
+let touchStartY=0,touchDown=false;
+canvas.addEventListener('touchstart',e=>{e.preventDefault();initAudio();touchDown=true;thrustHeld=true;touchStartY=e.touches[0].clientY},{passive:false});
+canvas.addEventListener('touchend',e=>{e.preventDefault();touchDown=false;thrustHeld=false},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!touchDown)return;const dy=e.touches[0].clientY-touchStartY;if(dy>34){slideHeld=true;setTimeout(()=>slideHeld=false,240);touchStartY=e.touches[0].clientY}},{passive:false});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){paused=true}else{paused=false;lastTime=performance.now()}});
+
+// ===== PLAYER & RESET =====
+function resetPlayer(){
+ player={x:120,y:GROUND_Y-28,vy:0,w:20,h:28,baseH:28,slideH:16,onGround:true,sliding:false,slideTime:0,hasShield:false,shieldTimer:0,iTime:0,extraLives:save.upgrades.extraLife||0};
+ const lvl=save.upgrades.shield||0; const chance=[0,0.25,0.5,0.75][lvl]; if(Math.random()<chance){player.hasShield=true;player.shieldTimer=9999}
+}
+function resetGame(){distance=0;scoreYards=0;runRings=0;speed=220;obstacles=[];rings=[];powerups=[];particles=[];actives=[];patternQueue=[];spawnDist=0;pwrTimer=4+Math.random()*3}
+function startRun(){resetGame();resetPlayer();state='playing';thrustHeld=false;slideHeld=false;inputBuffer=0;coyote=0;paused=false;ui.start.classList.add('hidden');ui.death.classList.add('hidden');ui.shop.classList.add('hidden');ui.leader.classList.add('hidden');lastTime=performance.now()}
+
+// ===== PHYSICS =====
+function update(dt){
+ if(state!=='playing')return;
+ const whistle=actives.find(a=>a.type==='whistle'); speedMult=whistle?0.5:1;
+ speed=Math.min(480,220+distance*0.58)*speedMult;
+ distance+=speed*dt*0.1; scoreYards=Math.floor(distance);
+
+ coyote=player.onGround?COYOTE_TIME:Math.max(0,coyote-dt);
+ inputBuffer=Math.max(0,inputBuffer-dt);
+
+ let thrustPower=2100+(save.upgrades.cleats||0)*320;
+ if(actives.find(a=>a.type==='cleats'))thrustPower*=1.35;
+
+ const shouldThrust=thrustHeld||inputBuffer>0;
+ if(shouldThrust&&!player.sliding){player.vy-=thrustPower*dt;if(Math.random()<0.22)sfx.thrust()}
+ player.vy+=1680*dt; player.vy*=0.997; player.y+=player.vy*dt;
+
+ if(player.y>=GROUND_Y-player.h){player.y=GROUND_Y-player.h;player.vy=0;player.onGround=true}else{player.onGround=false;if(player.y<0){player.y=0;player.vy=0}}
+
+ if(slideHeld&&player.onGround&&!player.sliding){player.sliding=true;player.slideTime=0.42;player.h=player.slideH;player.y=GROUND_Y-player.h}
+ if(player.sliding){player.slideTime-=dt;if(player.slideTime<=0||!player.onGround){player.sliding=false;player.h=player.baseH}}
+
+ if(player.iTime>0)player.iTime-=dt;
+ if(player.shieldTimer>0){player.shieldTimer-=dt;if(player.shieldTimer<=0)player.hasShield=false}
+
+ for(let i=actives.length-1;i>=0;i--){actives[i].t-=dt;if(actives[i].t<=0)actives.splice(i,1)}
+
+ spawnDist-=speed*dt; if(spawnDist<=0){spawnNext();spawnDist=Math.max(155,285-distance*0.75)}
+ pwrTimer-=dt; if(pwrTimer<=0){spawnPowerup();pwrTimer=9+Math.random()*5}
+
+ updateObstacles(dt);updateRings(dt);updatePowerups(dt);updateParticles(dt);checkCollisions();
+
+ ui.yards.textContent=scoreYards; ui.ringsHUD.textContent=runRings; ui.best.textContent=save.hiScore;
+ ui.powers.innerHTML=actives.map(a=>{const pct=Math.max(0,a.t/a.d*100);const ic={hardhat:'⛑',magnet:'🧲',cleats:'👟',whistle:'⏱'}[a.type];return`<div class="pwr"><span class="ico">${ic}</span><div class="bar"><i style="width:${pct}%"></i></div></div>`}).join('');
 }
 
-function playDrum(type, t) {
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.connect(g); g.connect(AC.destination);
-    
-    if (type === 'kick') {
-        o.frequency.setValueAtTime(100, t);
-        o.frequency.exponentialRampToValueAtTime(10, t + 0.3);
-        g.gain.setValueAtTime(1, t);
-        g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-        o.start(t); o.stop(t + 0.3);
-        beatPulseAmt = 1; // Trigger visual pulse
-    } else if (type === 'snare') {
-        o.type = 'triangle';
-        o.frequency.setValueAtTime(250, t);
-        g.gain.setValueAtTime(0.5, t);
-        g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-        o.start(t); o.stop(t + 0.1);
-        
-        // Noise layer for snare
-        const ns = AC.createBufferSource(), nf = AC.createBiquadFilter(), ng = AC.createGain();
-        const len = AC.sampleRate * 0.1; const buf = AC.createBuffer(1, len, AC.sampleRate);
-        const d = buf.getChannelData(0); for(let i=0; i<len; i++) d[i] = Math.random()*2-1;
-        ns.buffer = buf; nf.type = 'highpass'; nf.frequency.value = 1000;
-        ns.connect(nf); nf.connect(ng); ng.connect(AC.destination);
-        ng.gain.setValueAtTime(0.5, t); ng.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-        ns.start(t);
-    }
+// ===== SPAWN =====
+const PATTERNS=[['low','gap','low','high'],['low','low','high'],['high','gap','blitzer','low'],['blitzer','low','low','gap','high'],['low','blitzer','high','low'],['high','high','gap','low','low']];
+function spawnNext(){if(patternQueue.length===0){const p=PATTERNS[Math.floor(Math.random()*PATTERNS.length)];patternQueue.push(...p)}const t=patternQueue.shift();if(t==='gap')return;spawnObstacle(t);if(Math.random()<0.7)spawnRingLine()}
+function spawnObstacle(t){const x=WIDTH+30;if(t==='low')obstacles.push({type:t,x,y:GROUND_Y-36,w:26,h:36});else if(t==='high')obstacles.push({type:t,x,y:0,w:28,h:74});else if(t==='blitzer')obstacles.push({type:t,x,y:GROUND_Y-44,w:22,h:44,bob:Math.random()*6.28})}
+function spawnRingLine(){const cnt=3+Math.floor(Math.random()*3),by=GROUND_Y-(90+Math.random()*70),sx=WIDTH+70;for(let i=0;i<cnt;i++)rings.push({x:sx+i*26,y:by+Math.sin(i)*5,r:7,a:0})}
+function spawnPowerup(){const types=['hardhat','magnet','cleats','whistle'];const t=types[Math.floor(Math.random()*types.length)];powerups.push({type:t,x:WIDTH+20,y:70+Math.random()*(GROUND_Y-140),w:20,h:20,bob:Math.random()*5})}
+
+function updateObstacles(dt){for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.x-=speed*dt;if(o.type==='blitzer'){o.bob+=dt*4;o.y=GROUND_Y-44+Math.sin(o.bob)*9}if(o.x<-60)obstacles.splice(i,1)}}
+function updateRings(dt){const mag=actives.find(a=>a.type==='magnet');for(let i=rings.length-1;i>=0;i--){const r=rings[i];r.x-=speed*dt;r.a+=dt*6;if(mag){const dx=player.x+10-r.x,dy=player.y+14-r.y,d=Math.hypot(dx,dy);if(d<140){r.x+=dx*dt*4.5;r.y+=dy*dt*4.5}}if(r.x<-20)rings.splice(i,1)}}
+function updatePowerups(dt){for(let i=powerups.length-1;i>=0;i--){const p=powerups[i];p.x-=speed*dt;p.bob+=dt*3;p.y+=Math.sin(p.bob)*0.25;if(p.x<-30)powerups.splice(i,1)}}
+function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=700*dt;p.t-=dt;if(p.t<=0)particles.splice(i,1)}}
+
+// ===== COLLISIONS =====
+function rect(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function checkCollisions(){
+ const pr={x:player.x+2,y:player.y+2,w:player.w-4,h:player.h-4};
+ for(let i=obstacles.length-1;i>=0;i--){if(rect(pr,obstacles[i])){handleHit(i);break}}
+ for(let i=rings.length-1;i>=0;i--){const r=rings[i];if(Math.hypot(player.x+10-r.x,player.y+14-r.y)<17){rings.splice(i,1);runRings++;sfx.ring();for(let k=0;k<5;k++)particles.push({x:r.x,y:r.y,vx:(Math.random()-0.5)*100,vy:(Math.random()-0.5)*100,t:0.35,color:C.gold})}}
+ for(let i=powerups.length-1;i>=0;i--){const p=powerups[i];if(rect(pr,{x:p.x,y:p.y,w:p.w,h:p.h})){powerups.splice(i,1);activatePower(p.type);sfx.power()}}
+}
+function handleHit(idx){
+ if(player.iTime>0)return;
+ if(player.hasShield){player.hasShield=false;player.shieldTimer=0;player.iTime=1.1;obstacles.splice(idx,1);burst(player.x+10,player.y+10,C.gold);return}
+ if(player.extraLives>0){player.extraLives--;player.iTime=2;player.hasShield=true;player.shieldTimer=2;burst(player.x+10,player.y+10,C.silver);return}
+ sfx.hit();gameOver();
+}
+function burst(x,y,c){for(let i=0;i<12;i++)particles.push({x,y,vx:Math.cos(i/12*Math.PI*2)*(70+Math.random()*80),vy:Math.sin(i/12*Math.PI*2)*(70+Math.random()*80),t:0.5,color:c})}
+function activatePower(t){let d=8;if(t==='hardhat'){d=8;player.hasShield=true;player.shieldTimer=d}else if(t==='magnet'){d=10+(save.upgrades.magnet||0)*2.2}else if(t==='cleats'){d=6}else if(t==='whistle'){d=5}actives.push({type:t,t:d,d})}
+function gameOver(){state='dead';thrustHeld=false;slideHeld=false;save.rings+=runRings;if(scoreYards>save.hiScore)save.hiScore=scoreYards;save.topScores.push({name:save.playerName,score:scoreYards,date:Date.now()});save.topScores.sort((a,b)=>b.score-a.score);save.topScores=save.topScores.slice(0,5);saveGame();ui.endYards.textContent=scoreYards;ui.endRings.textContent=runRings;ui.death.classList.remove('hidden');updateInfo();obstacles=[];rings=[];powerups=[];particles=[];actives=[]}
+
+// ===== RENDER =====
+const bg=document.createElement('canvas');bg.width=WIDTH;bg.height=HEIGHT;const bctx=bg.getContext('2d');
+function buildBG(){bctx.fillStyle=C.black;bctx.fillRect(0,0,WIDTH,HEIGHT);bctx.fillStyle='#0b1015';for(let i=0;i<14;i++){const x=i*70+(i*19)%15,h=34+(i*31)%70;bctx.fillRect(x,GROUND_Y-h,58,h);bctx.fillStyle=C.silver;bctx.fillRect(x+22,GROUND_Y-h,5,10);bctx.fillStyle='#0b1015'}bctx.fillStyle=C.turf;bctx.fillRect(0,GROUND_Y,WIDTH,GROUND_H);bctx.fillStyle='#142718';for(let y=0;y<GROUND_H;y+=4)bctx.fillRect(0,GROUND_Y+y,WIDTH,2);bctx.fillStyle='rgba(165,172,175,.12)';for(let x=0;x<WIDTH;x+=80)bctx.fillRect(x,GROUND_Y,2,GROUND_H)}buildBG();
+
+function render(){
+ ctx.drawImage(bg,0,0);
+ ctx.globalAlpha=.28;ctx.fillStyle=C.silver;const off=(distance*4.8)%80;for(let x=-off;x<WIDTH;x+=80)ctx.fillRect(x,GROUND_Y+GROUND_H-4,38,2);ctx.globalAlpha=1;
+
+ rings.forEach(r=>{ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.a);ctx.fillStyle=C.gold;ctx.fillRect(-6,-6,12,12);ctx.fillStyle=C.black;ctx.fillRect(-3,-3,6,6);ctx.restore()});
+ powerups.forEach(p=>{ctx.save();ctx.translate(p.x,p.y+Math.sin(p.bob)*2);drawPower(p.type,0,0);ctx.restore()});
+ obstacles.forEach(o=>{if(o.type==='low')drawDummy(o);else if(o.type==='high')drawGirder(o);else drawBlitzer(o)});
+ if(player && !(player.iTime>0 && (performance.now()>>5)%2)) drawPlayer();
+ if(player && actives.find(a=>a.type==='magnet')){ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle=C.gold;ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x+10,player.y+14,112+Math.sin(performance.now()/180)*4,0,Math.PI*2);ctx.stroke();ctx.restore()}
+ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.t);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4)});ctx.globalAlpha=1;
 }
 
-function startBeat() {
-    initAC(); if (AC.state === 'suspended') AC.resume();
-    playing = true;
-    let nextTime = AC.currentTime + 0.1;
-    let stepDur = 60 / 105 / 4; // 105 BPM
+function drawPlayer(){
+ ctx.save();ctx.translate(player.x,player.y);
+ ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(-1,player.h-2,player.w+2,4);
+ // body
+ ctx.fillStyle=C.silver;ctx.fillRect(4,6,12,14);
+ // helmet
+ ctx.fillStyle=C.gold;ctx.fillRect(5,0,10,8);ctx.fillStyle=C.black;ctx.fillRect(7,3,2,2);ctx.fillRect(11,3,2,2);
+ // arms
+ ctx.fillStyle=C.silver;
+ if(player.sliding){ctx.fillRect(0,14,20,4)}else if(thrustHeld){ctx.fillRect(1,7,5,9);ctx.fillRect(14,7,5,9)}else{ctx.fillRect(2,8,4,8);ctx.fillRect(14,9,4,8)}
+ // legs
+ ctx.fillStyle=C.black;
+ if(player.sliding){ctx.fillRect(2,player.h-6,16,6)}else{const step=Math.floor(distance/14)%4;const off=step===1?2:step===3?-2:0;ctx.fillRect(4,18,5,player.h-18);ctx.fillRect(11,18,5,player.h-18+off)}
+ // thrust flame
+ if(thrustHeld&&!player.sliding){ctx.fillStyle=Math.random()>.5?C.gold:'#fff';ctx.fillRect(6,16,3,5+Math.random()*3);ctx.fillRect(11,16,3,5+Math.random()*3)}
+ // shield
+ if(player.hasShield){ctx.strokeStyle=C.gold;ctx.lineWidth=2;ctx.beginPath();ctx.arc(10,12,20+Math.sin(performance.now()/150)*1.5,0,Math.PI*2);ctx.stroke()}
+ ctx.restore();
+}
+function drawDummy(o){ctx.fillStyle=C.silver;ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle=C.black;ctx.fillRect(o.x+2,o.y+7,o.w-4,4);ctx.fillRect(o.x+2,o.y+19,o.w-4,4);ctx.fillStyle='#697075';ctx.fillRect(o.x,o.y,o.w,3)}
+function drawGirder(o){ctx.fillStyle=C.black;ctx.fillRect(o.x,o.y,o.w,o.h);ctx.fillStyle=C.silver;ctx.fillRect(o.x-3,o.y,o.w+6,6);ctx.fillRect(o.x-3,o.y+o.h-6,o.w+6,6);ctx.fillRect(o.x+10,o.y,5,o.h)}
+function drawBlitzer(o){const y=o.y;ctx.fillStyle=C.black;ctx.fillRect(o.x+3,y+12,16,26);ctx.fillStyle=C.silver;ctx.fillRect(o.x+1,y+15,20,13);ctx.fillStyle=C.gold;ctx.fillRect(o.x+4,y,14,9);ctx.fillStyle=C.black;ctx.fillRect(o.x+6,y+3,3,2);ctx.fillRect(o.x+13,y+3,3,2)}
+function drawPower(t,x,y){ctx.fillStyle=C.black;ctx.fillRect(x-1,y-1,22,22);ctx.fillStyle=C.gold;ctx.fillRect(x,y,20,20);ctx.fillStyle=C.black;if(t==='hardhat'){ctx.fillRect(x+3,y+5,14,6);ctx.fillRect(x+1,y+11,18,3)}else if(t==='magnet'){ctx.fillRect(x+4,y+4,3,12);ctx.fillRect(x+13,y+4,3,12);ctx.fillRect(x+4,y+13,12,3)}else if(t==='cleats'){ctx.fillRect(x+3,y+11,14,5);ctx.fillRect(x+4,y+6,9,5)}else{ctx.beginPath();ctx.arc(x+10,y+10,6,0,7);ctx.fill();ctx.fillStyle=C.gold;ctx.beginPath();ctx.arc(x+10,y+10,3,0,7);ctx.fill()}}
 
-    function tick() {
-        if(!playing) return;
-        while(nextTime < AC.currentTime + 0.1) {
-            let i = stepIndex % 16;
-            setTimeout(() => { onBeat = (pattern.k[i] || pattern.s[i]) === 1; }, Math.max(0, (nextTime - AC.currentTime)*1000 - 50));
-            
-            if(pattern.k[i]) playDrum('kick', nextTime);
-            if(pattern.s[i]) playDrum('snare', nextTime);
-            
-            stepIndex++; nextTime += stepDur;
-        }
-        beatTimer = setTimeout(tick, 30);
-    }
-    tick();
+// ===== GAME LOOP =====
+function loop(now){if(paused){requestAnimationFrame(loop);return}const dt=Math.min(0.033,(now-lastTime)/1000);lastTime=now;if(state==='playing')update(dt);render();requestAnimationFrame(loop)}
+
+// ===== SHOP =====
+const SHOP=[{id:'cleats',name:'STEEL-TOE CLEATS',desc:'Stronger thrust',max:3,costs:[50,150,400]},{id:'magnet',name:'MAGNET GLOVE+',desc:'Longer magnet time',max:3,costs:[75,200,350]},{id:'shield',name:'STARTING HARD HAT',desc:'Spawn shield chance',max:3,costs:[100,250,500]},{id:'extraLife',name:'EXTRA LIFE',desc:'One revive per run',max:1,costs:[300]}];
+function renderShop(){ui.bank.textContent=save.rings;ui.shopList.innerHTML='';SHOP.forEach(it=>{const lvl=save.upgrades[it.id]||0;const max=it.max;const cost=lvl<max?it.costs[lvl]:'MAX';const el=document.createElement('div');el.className='shop-item';el.innerHTML=`<div class="info"><div class="name">${it.name} ${lvl? 'Lv.'+lvl:''}</div><div class="desc">${it.desc}</div></div><div class="cost">${cost}</div><button class="btn" ${lvl>=max||save.rings<cost?'disabled':''}>BUY</button>`;el.querySelector('button').onclick=()=>{if(save.rings>=cost){save.rings-=cost;save.upgrades[it.id]=lvl+1;saveGame();sfx.power();renderShop();updateInfo()}};ui.shopList.appendChild(el)})}
+
+// ===== LEADERBOARD =====
+function renderLeader(){save.playerName=ui.playerName.value.toUpperCase().slice(0,8)||'RUNNER';saveGame();ui.leadList.innerHTML=save.topScores.map((s,i)=>`<div><span>${i+1}. ${s.name}</span><span>${s.score} YDS</span></div>`).join('')||'<div>No runs</div>'}
+async function submitScore(name,score){
+ // ===== FIREBASE CONFIG - uncomment to enable =====
+ /*
+ const firebaseConfig = { apiKey:"", authDomain:"", projectId:"", storageBucket:"", messagingSenderId:"", appId:"" };
+ if(!window.firebase?.apps?.length) firebase.initializeApp(firebaseConfig);
+ const db=firebase.firestore();
+ await db.collection('steelCityScores').add({name,score,ts:Date.now()});
+ alert('Score submitted!');
+ */
+ alert('Online leaderboard not configured. See submitScore() in code.');
 }
 
-function playFX(type) {
-    if(!AC) return;
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.connect(g); g.connect(AC.destination);
-    if(type === 'jump') {
-        o.type = 'sine'; o.frequency.setValueAtTime(300, AC.currentTime);
-        o.frequency.exponentialRampToValueAtTime(600, AC.currentTime + 0.1);
-        g.gain.setValueAtTime(0.3, AC.currentTime); g.gain.linearRampToValueAtTime(0, AC.currentTime + 0.1);
-        o.start(); o.stop(AC.currentTime + 0.1);
-    } else if (type === 'coin') {
-        o.type = 'square'; o.frequency.setValueAtTime(880, AC.currentTime);
-        g.gain.setValueAtTime(0.1, AC.currentTime); g.gain.linearRampToValueAtTime(0, AC.currentTime + 0.1);
-        o.start(); o.stop(AC.currentTime + 0.1);
-    } else if (type === 'hit') {
-        o.type = 'sawtooth'; o.frequency.setValueAtTime(100, AC.currentTime);
-        o.frequency.exponentialRampToValueAtTime(10, AC.currentTime + 0.3);
-        g.gain.setValueAtTime(0.5, AC.currentTime); g.gain.linearRampToValueAtTime(0, AC.currentTime + 0.3);
-        o.start(); o.stop(AC.currentTime + 0.3);
-    }
-}
+// ===== UI BINDINGS =====
+$('btnPlay').onclick=()=>{initAudio();startRun()};
+$('btnAgain').onclick=startRun;
+$('btnShop').onclick=()=>{ui.start.classList.add('hidden');ui.shop.classList.remove('hidden');renderShop()};
+$('btnToShop').onclick=()=>{ui.death.classList.add('hidden');ui.shop.classList.remove('hidden');renderShop()};
+$('btnShopBack').onclick=()=>{ui.shop.classList.add('hidden');ui.start.classList.remove('hidden')};
+$('btnLead').onclick=()=>{ui.start.classList.add('hidden');ui.leader.classList.remove('hidden');renderLeader()};
+$('btnLeadBack').onclick=()=>{ui.leader.classList.add('hidden');ui.start.classList.remove('hidden')};
+$('btnSubmitOnline').onclick=()=>submitScore(save.playerName,save.hiScore);
+ui.playerName.oninput=renderLeader;
 
-// --- GAME ENGINE ---
-const canvas = document.getElementById('gc');
-const ctx = canvas.getContext('2d');
-const W = 860, H = 300, GY = H - 52;
+function togglePause(){if(state!=='playing')return;paused=!paused;if(!paused){lastTime=performance.now();requestAnimationFrame(loop)}}
+function updateInfo(){ui.saveInfo.textContent=`HI ${save.hiScore} YDS • BANK ${save.rings} RINGS • CLEATS Lv.${save.upgrades.cleats||0}`;ui.best.textContent=save.hiScore;ui.ringsHUD.textContent=save.rings}
 
-let gs = 'idle', score = 0, frame = 0, spd = 5, coins = 0;
-let combo = 1, maxCombo = 1, comboTimer = 0, rhythmScore = 0;
-let beatPulseAmt = 0, worldX = 0, lastTime = 0, spawnTimer = 0;
-
-const P = {
-    x: 110, y: GY, vy: 0, w: 26, h: 48,
-    jumps: 0, maxJ: 2, sliding: false, slideT: 0,
-    shield: false, beastMode: false, beastT: 0
-};
-
-let obstacles = [], pickups = [], particles = [];
-
-// --- SHOP LOGIC ---
-window.buyBuff = function(type, cost) {
-    if (save.coins >= cost) {
-        save.coins -= cost;
-        if(type === 'shield') { P.shield = true; notif("SHIELD EQUIPPED"); }
-        if(type === 'cleats') { P.maxJ = 3; notif("TRIPLE JUMP READY"); }
-        writeSave(); updateHUD();
-        if(AC) playFX('coin');
-    } else {
-        notif("NOT ENOUGH COINS");
-    }
-};
-
-// --- DRAWING ---
-function drawWorld(dtf) {
-    const isMNF = score > 500; // Monday Night Football lights on
-    
-    // Sky
-    ctx.fillStyle = isMNF ? '#050a0f' : '#1A2A3A';
-    ctx.fillRect(0, 0, W, GY);
-    
-    // Stadium Lights (MNF)
-    if (isMNF) {
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        ctx.beginPath(); ctx.moveTo(W*0.3, 0); ctx.lineTo(W*0.1, GY); ctx.lineTo(W*0.5, GY); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(W*0.7, 0); ctx.lineTo(W*0.5, GY); ctx.lineTo(W*0.9, GY); ctx.fill();
-    }
-
-    // Turf
-    ctx.fillStyle = varTurf = isMNF ? '#061406' : '#0a1c0a';
-    ctx.fillRect(0, GY, W, H - GY);
-
-    // Yard Lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2;
-    let offset = worldX % 100;
-    for(let i = -offset; i < W; i += 100) {
-        ctx.beginPath(); ctx.moveTo(i, GY); ctx.lineTo(i, H); ctx.stroke();
-    }
-    
-    // Beat Line
-    ctx.strokeStyle = beatPulseAmt > 0.5 ? '#FFB612' : '#555'; 
-    ctx.lineWidth = 2 + beatPulseAmt*2;
-    ctx.beginPath(); ctx.moveTo(0, GY); ctx.lineTo(W, GY); ctx.stroke();
-}
-
-function drawPlayer() {
-    const py = P.sliding ? P.y + 24 : P.y;
-    const ph = P.sliding ? 24 : 48;
-    ctx.save();
-    
-    if(P.beastMode) {
-        ctx.shadowColor = '#FFB612'; ctx.shadowBlur = 15;
-        ctx.globalAlpha = 0.8 + 0.2 * Math.sin(frame*0.5);
-    }
-
-    // Helmet
-    ctx.fillStyle = '#FFB612';
-    ctx.beginPath(); ctx.arc(P.x + P.w/2, py + 8, 10, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#101820'; ctx.fillRect(P.x + P.w/2 - 2, py, 4, 10); // Stripe
-
-    // Jersey
-    ctx.fillStyle = P.beastMode ? '#FFB612' : '#101820';
-    if(P.sliding) {
-        ctx.fillRect(P.x - 10, py + 10, P.w + 20, 14);
-    } else {
-        ctx.fillRect(P.x, py + 16, P.w, 20);
-    }
-
-    // Pants
-    ctx.fillStyle = '#A5ACAF';
-    if (!P.sliding) {
-        let leg = Math.sin(frame * 0.2) * 8;
-        if(P.y < GY) leg = 0; // Freeze legs in air
-        ctx.fillRect(P.x + 4, py + 36, 6, 12 + leg);
-        ctx.fillRect(P.x + 16, py + 36, 6, 12 - leg);
-    }
-    
-    if(P.shield && !P.beastMode) {
-        ctx.strokeStyle = '#00f'; ctx.lineWidth = 2;
-        ctx.strokeRect(P.x - 4, py - 4, P.w + 8, ph + 8);
-    }
-    
-    ctx.restore();
-}
-
-// --- UPDATE ---
-function update(dt) {
-    if (gs !== 'playing') return;
-    let dtf = dt / 16.67;
-    frame += dtf;
-    
-    score += (0.15 * (spd / 5) * combo) * dtf;
-    
-    // Difficulty Tiers
-    let spawnLimit = 70;
-    if (score > 1000) { spd = 9.5; spawnLimit = 45; }      // HOF
-    else if (score > 500) { spd = 8; spawnLimit = 55; }     // Veteran
-    else { spd = 6 + (score / 250); spawnLimit = 70; }      // Rookie
-    
-    worldX += spd * dtf;
-
-    // Rhythm logic
-    if(onBeat && playing) rhythmScore = Math.min(200, rhythmScore + 2*dtf);
-    else rhythmScore = Math.max(0, rhythmScore - 0.5*dtf);
-    
-    if(comboTimer > 0) comboTimer -= dtf;
-    else if(combo > 1) combo = Math.max(1, combo - 1);
-    
-    if(P.beastMode) {
-        P.beastT -= dtf;
-        if(P.beastT <= 0) P.beastMode = false;
-    }
-
-    // Physics
-    let grav = (P.vy < 0 && P.jumpHeld) ? 0.45 : 0.7; // Variable jump height
-    P.vy += grav * dtf;
-    P.y += P.vy * dtf;
-    if (P.y >= GY) { P.y = GY; P.vy = 0; P.jumps = 0; }
-    if (P.sliding) { P.slideT -= dtf; if (P.slideT <= 0) P.sliding = false; }
-
-    // Spawning
-    spawnTimer += dtf;
-    if (spawnTimer > spawnLimit) {
-        let type = Math.random();
-        if (type < 0.6) {
-            // Defender (moves up/down if Vet+)
-            let moveY = score > 500 ? Math.sin(frame*0.05)*10 : 0;
-            obstacles.push({ x: W, y: GY - moveY, w: 24, h: 45, t: 'def' });
-        } else if (type < 0.8) {
-            // Low Pass (forces slide)
-            obstacles.push({ x: W, y: GY - 35, w: 20, h: 12, t: 'ball' });
-        } else {
-            // Coin
-            pickups.push({ x: W, y: GY - 40 - Math.random()*20, w: 14, h: 14, t: 'coin' });
-        }
-        
-        // Golden Pack Spawner (5x Combo Req)
-        if (combo >= 5 && Math.random() > 0.8 && !P.beastMode) {
-             pickups.push({ x: W, y: GY - 60, w: 20, h: 25, t: 'pack' });
-        }
-        spawnTimer = 0;
-    }
-
-    // Move & Collide
-    obstacles.forEach(o => {
-        o.x -= spd * dtf;
-        let pTop = P.sliding ? P.y+24 : P.y;
-        let pHt = P.sliding ? 24 : 48;
-        if (P.x < o.x + o.w && P.x + P.w > o.x && pTop < o.y + o.h && pTop + pHt > o.y) {
-            if (P.beastMode) {
-                o.x = -100; score += 50; // Smash!
-                playFX('hit');
-            } else if (P.shield) {
-                P.shield = false; o.x = -100;
-                playFX('hit');
-            } else {
-                die();
-            }
-        }
-    });
-    obstacles = obstacles.filter(o => o.x > -50);
-    
-    pickups.forEach(p => {
-        p.x -= spd * dtf;
-        let pTop = P.sliding ? P.y+24 : P.y;
-        let pHt = P.sliding ? 24 : 48;
-        if (P.x < p.x + p.w && P.x + P.w > p.x && pTop < p.y + p.h && pTop + pHt > p.y) {
-            if(p.t === 'coin') { coins++; save.coins++; score += 10*combo; playFX('coin'); }
-            if(p.t === 'pack') { P.beastMode = true; P.beastT = 300; combo = 8; notif("BEAST MODE!"); playFX('jump'); }
-            p.x = -100;
-        }
-    });
-    pickups = pickups.filter(p => p.x > -50);
-
-    if(beatPulseAmt > 0) beatPulseAmt = Math.max(0, beatPulseAmt - 0.05*dtf);
-    updateHUD();
-}
-
-function draw() {
-    ctx.clearRect(0,0,W,H);
-    drawWorld();
-    
-    obstacles.forEach(o => {
-        if(o.t === 'def') {
-            ctx.fillStyle = '#A5ACAF'; ctx.fillRect(o.x, o.y, o.w, o.h);
-            ctx.fillStyle = '#101820'; ctx.fillRect(o.x+4, o.y+5, 16, 12); // Helmet hole
-        } else {
-            ctx.fillStyle = '#8B2500'; ctx.beginPath(); ctx.ellipse(o.x+10, o.y+6, 12, 6, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.fillRect(o.x+8, o.y+4, 4, 4); // Laces
-        }
-    });
-    
-    pickups.forEach(p => {
-        if(p.t === 'coin') {
-            ctx.fillStyle = '#FFB612'; ctx.beginPath(); ctx.arc(p.x+7, p.y+7, 7, 0, Math.PI*2); ctx.fill();
-        } else if (p.t === 'pack') {
-            ctx.fillStyle = '#FFD700'; ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.strokeStyle = '#fff'; ctx.strokeRect(p.x+2, p.y+2, p.w-4, p.h-4);
-        }
-    });
-    
-    drawPlayer();
-}
-
-function loop(t) {
-    let dt = t - lastTime || 0;
-    lastTime = t;
-    update(dt);
-    if(gs === 'playing') draw();
-    requestAnimationFrame(loop);
-}
-
-// --- INPUT & TOUCH ---
-let touchStartX = 0, touchStartY = 0;
-window.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
-}, {passive: false});
-
-window.addEventListener('touchend', e => {
-    if (gs !== 'playing') return;
-    let dx = Math.abs(e.changedTouches[0].screenX - touchStartX);
-    let dy = Math.abs(e.changedTouches[0].screenY - touchStartY);
-
-    if (dx > 30 || dy > 30) {
-        if (dy > dx) {
-            if (e.changedTouches[0].screenY < touchStartY) handleJump();
-            else if (!P.sliding) { P.sliding = true; P.slideT = 30; }
-        }
-    } else {
-        if (e.changedTouches[0].screenX > window.innerWidth / 2) handleJump();
-        else if (!P.sliding) { P.sliding = true; P.slideT = 30; }
-    }
-});
-
-const keys = {};
-window.addEventListener('keydown', e => { 
-    keys[e.code] = true; P.jumpHeld = true;
-    if((e.code === 'Space' || e.code === 'ArrowUp')) handleJump();
-    if(e.code === 'ArrowDown' && !P.sliding) { P.sliding = true; P.slideT = 30; }
-});
-window.addEventListener('keyup', e => { keys[e.code] = false; if(e.code === 'Space' || e.code === 'ArrowUp') P.jumpHeld = false; });
-
-function handleJump() {
-    if(P.jumps < P.maxJ) {
-        if(onBeat && playing) {
-            combo = Math.min(combo + 1, 8); comboTimer = 100;
-            if(combo > 1) notif("ON BEAT x" + combo);
-        } else if(playing && combo > 1) { combo = 1; }
-        maxCombo = Math.max(maxCombo, combo);
-        
-        P.vy = -13; P.jumps++; P.sliding = false;
-        playFX('jump');
-    }
-}
-
-// --- SYSTEM ---
-function notif(txt) {
-    const el = document.createElement('div'); el.className = 'notif'; el.textContent = txt;
-    document.getElementById('notifs').appendChild(el);
-    setTimeout(() => el.remove(), 2000);
-}
-
-function updateHUD() {
-    document.getElementById('s-score').textContent = Math.floor(score);
-    document.getElementById('s-best').textContent = save.hiScore;
-    document.getElementById('s-coins').textContent = save.coins;
-    document.getElementById('rhythm-fill').style.width = (rhythmScore*100/200) + '%';
-    
-    const cd = document.getElementById('combo-display');
-    if(combo > 1) { cd.style.opacity = '1'; document.getElementById('combo-num').textContent = combo; }
-    else cd.style.opacity = '0';
-}
-
-function die() {
-    gs = 'dead'; playing = false; clearTimeout(beatTimer); playFX('hit');
-    save.coins += coins;
-    
-    save.topScores.push(Math.floor(score));
-    save.topScores.sort((a,b) => b-a);
-    save.topScores = save.topScores.slice(0, 5);
-    
-    if(score > save.hiScore) save.hiScore = Math.floor(score);
-    writeSave();
-    
-    document.getElementById('d-score').textContent = Math.floor(score);
-    document.getElementById('d-coins').textContent = coins;
-    document.getElementById('d-combo').textContent = "x" + maxCombo;
-    document.getElementById('ov-dead').classList.remove('gone');
-}
-
-document.getElementById('btn-start').onclick = () => {
-    gs = 'playing'; score = 0; coins = 0; combo = 1; maxCombo = 1; obstacles = []; pickups = [];
-    P.jumps = 0; P.sliding = false; P.beastMode = false;
-    document.getElementById('ov-start').classList.add('gone');
-    startBeat();
-};
-
-// Init UI
-if(!("ontouchstart" in window)) document.getElementById('desk-hint').style.display = 'block';
-const lb = document.getElementById('lb-display');
-lb.innerHTML = save.topScores.length > 0 ? "HALL OF FAME:<br>" + save.topScores.join(' · ') : "NO STATS YET";
-updateHUD();
-requestAnimationFrame(loop);
+updateInfo();render();requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
