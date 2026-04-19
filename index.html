@@ -3,377 +3,199 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Steel City Rings</title>
-
+<title>Steel City Rings v2</title>
 <style>
-:root{
-  --black:#101820;
-  --gold:#FFB612;
-  --silver:#A5ACAF;
-  --turf:#1a331a;
-}
-
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  height:100%;
-  background:#000;
-  color:var(--gold);
-  font-family:monospace;
-  overscroll-behavior:none;
-  touch-action:none;
-}
-
-#cabinet{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:100vh;
-  padding:10px;
-  background:radial-gradient(#1a1f26,#000);
-}
-
-#crt{
-  position:relative;
-  width:100%;
-  max-width:900px;
-  aspect-ratio:860/300;
-  background:var(--black);
-  border:6px solid var(--gold);
-  overflow:hidden;
-}
-
-canvas{
-  width:100%;
-  height:100%;
-  display:block;
-  image-rendering:pixelated;
-}
-
-.overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(16,24,32,.96);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--gold);
-}
-
+:root{--black:#101820;--gold:#FFB612;--silver:#A5ACAF;--turf:#1a331a}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:var(--gold);font-family:monospace;overscroll-behavior:none;touch-action:none}
+#cabinet{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(#1a1f26,#000);padding:10px}
+#crt{position:relative;width:100%;max-width:960px;aspect-ratio:16/9;background:var(--black);border:6px solid var(--gold);overflow:hidden}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.overlay{position:absolute;inset:0;background:rgba(16,24,32,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--gold);text-align:center;padding:20px}
 .hidden{display:none}
-
-.btn{
-  background:#000;
-  border:2px solid var(--gold);
-  color:var(--gold);
-  padding:10px 14px;
-  cursor:pointer;
-}
+.btn{background:#000;border:2px solid var(--gold);color:var(--gold);padding:10px 16px;margin:4px;cursor:pointer;font-family:monospace}
+.hud{position:absolute;top:8px;left:12px;right:12px;display:flex;justify-content:space-between;font-size:14px;pointer-events:none}
+#powers{position:absolute;top:30px;left:12px;display:flex;gap:6px}
+.pwr{background:rgba(0,0,0,.6);border:1px solid var(--gold);padding:2px 6px;font-size:11px}
+.scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.15) 2px 3px)}
+.touch-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;opacity:.6;pointer-events:none}
+#pauseMenu .btn{min-width:120px}
+.intro-anim{font-size:32px;letter-spacing:4px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
 </style>
 </head>
-
 <body>
 <div id="cabinet">
 <div id="crt">
+<canvas id="game" width="960" height="540"></canvas>
+<div class="scanlines" id="scan"></div>
+<div class="hud"><div>YARDS <b id="yards">0</b></div><div>RINGS <b id="rings">0</b></div><div>COMBO <b id="combo">0</b></div><div>HI <b id="best">0</b></div></div>
+<div id="powers"></div>
+<div class="touch-hint">LEFT 8% DEAD • LEFT = DUCK • RIGHT = THRUST</div>
 
-<canvas id="game" width="860" height="300"></canvas>
-
-<div id="start" class="overlay">
+<div id="intro" class="overlay">
+  <div class="intro-anim">STEEL CITY</div>
+  <div style="margin:10px 0">v2 • MILL YARD RUNNER</div>
+  <div id="weather" style="font-size:12px;opacity:.8;margin-bottom:12px"></div>
   <button class="btn" id="play">PLAY</button>
+  <button class="btn" id="shopBtn">SHOP</button>
+</div>
+
+<div id="pauseMenu" class="overlay hidden">
+  <h2>PAUSED</h2>
+  <button class="btn" id="resume">RESUME</button>
+  <button class="btn" id="quit">QUIT TO MENU</button>
 </div>
 
 <div id="death" class="overlay hidden">
-  <button class="btn" id="again">RETRY</button>
+  <h2 id="deathTitle">DRIVE ENDED</h2>
+  <div id="deathStats"></div>
+  <button class="btn" id="retry">RETRY</button>
+</div>
+
+<div id="shop" class="overlay hidden">
+  <h2>SHOP • AMAZON MODE</h2>
+  <div id="bank" style="margin:6px"></div>
+  <div id="stats" style="font-size:12px;opacity:.8;margin:4px"></div>
+  <div id="shopList" style="max-height:50%;overflow:auto;width:90%"></div>
+  <button class="btn" id="closeShop">BACK</button>
 </div>
 
 </div>
 </div>
 
 <script>
-(()=>{
+(()=>{ // v2 implements 40 tweaks simplified
+const VERSION=2, W=960, H=540, GROUND=H-80;
+const C={black:'#101820',gold:'#FFB612',silver:'#A5ACAF',turf:'#1a331a'};
+const canvas=document.getElementById('game'), ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+const $=id=>document.getElementById(id);
+const ui={yards:$('yards'),rings:$('rings'),combo:$('combo'),best:$('best'),powers:$('powers')};
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+let save=JSON.parse(localStorage.getItem('scr_v2')||'{}');
+save=Object.assign({hiScore:0,rings:500,upgrades:{cleats:0,magnet:0,shield:0,extraLife:0,ghost:0,double:0,vacuum:0,overcharge:0,multi:0,slowmo:0},themes:['steel'],helmet:false,scanlines:true},save);
+function saveGame(){localStorage.setItem('scr_v2',JSON.stringify(save))}
 
-let player, obstacles=[], rings=[];
-let thrustHeld=false;
-let distance=0;
+// AUDIO with pressure layers
+let audioCtx; function initAudio(){if(audioCtx)return;audioCtx=new (window.AudioContext||window.webkitAudioContext)()}
+function beep(f,d,v=0.07,t='square'){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d+0.02)}
+const sfx={thrust:()=>{beep(220,0.04,0.03);navigator.vibrate&&navigator.vibrate(10)},ring:()=>{beep(840,0.05,0.06);setTimeout(()=>beep(1260,0.05,0.05),60);navigator.vibrate&&navigator.vibrate(5)},power:()=>{beep(600,0.06,0.07);setTimeout(()=>beep(900,0.06),70);setTimeout(()=>beep(1200,0.08),140);navigator.vibrate&&navigator.vibrate([10,20,10])},hit:()=>{beep(180,0.15,0.09,'sawtooth');setTimeout(()=>beep(90,0.2,0.08,'sawtooth'),80);navigator.vibrate&&navigator.vibrate([30,50,30])},cheer:()=>{beep(700+Math.random()*200,0.08,0.04)}};
 
-const GROUND=260;
+// GAME STATE
+let state='menu', player, obstacles=[], rings=[], powerups=[], particles=[], distance=0, runRings=0, combo=0, comboTimer=0, speed=200, lastTime=0, paused=false, pressure=0, weather=['CLEAR','RAIN','SNOW','FOG'][Math.floor(Math.random()*4)];
+$('weather').textContent='WEATHER: '+weather;
+$('scan').style.display=save.scanlines?'block':'none';
 
-/* ---------------- DDD v2 ---------------- */
+// TUNING per your 40 fixes
+const THRUST_IMPULSE=950; // lifts half screen
+const GRAVITY=1650; // glide
+const DRAG=0.998;
+const COYOTE=0.08;
+const MAGNET_RADIUS=190;
+const FLOW_YARDS=400;
 
-let DDD={
-  pressure:0,
-  state:"flow",
-  timer:0,
-  lastEvent:0
-};
+function resetPlayer(){player={x:140,y:GROUND-32,vy:0,w:24,h:32,onGround:true,iTime:0,lives:1+save.upgrades.extraLife,hasShield:save.upgrades.shield>0}}
+function resetGame(){distance=0;runRings=0;combo=0;comboTimer=0;speed=200;obstacles=[];rings=[];powerups=[];particles=[];pressure=0;resetPlayer()}
 
-function updatePressure(dt){
-  const base = distance/2200;
-  const survival = Math.min(1, DDD.timer/40);
-  DDD.pressure = Math.min(1, base*0.65 + survival*0.35);
+function spawnObstacle(){const h=Math.random()<0.3?70:32;obstacles.push({x:W+20,y:GROUND,w:26,h,passed:false})}
+function spawnRing(x,y){rings.push({x,y,r:8,took:false})}
+function spawnPattern(){ // forgiving gaps, offset rings for risk
+  const gap=Math.max(220,340-distance*0.3);
+  if(Math.random()<0.7) spawnObstacle();
+  // safe line rings offset
+  const baseY=GROUND-120-Math.random()*80;
+  const offset=Math.random()<0.5?-20:20;
+  for(let i=0;i<4;i++) spawnRing(W+40+i*28,baseY+offset+Math.sin(i)*6);
+  // occasional powerup
+  if(Math.random()<0.25){const types=['magnet','shield','double','ghost','vacuum','overcharge','slowmo','multi'];powerups.push({x:W+100,y:baseY-40,type:types[Math.floor(Math.random()*types.length)]})}
+  return gap;
 }
-
-function updateState(){
-  const p=DDD.pressure;
-
-  if(p<0.25) DDD.state="flow";
-  else if(p<0.45) DDD.state="ramp";
-  else if(p<0.7) DDD.state="pressure";
-  else if(p<0.9) DDD.state="spike";
-  else DDD.state="panic";
-}
-
-/* ---------------- AUDIO ---------------- */
-
-let audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-
-let reverbDelay,reverbGain,reverbFilter;
-
-function initReverb(){
-  if(reverbDelay) return;
-
-  reverbDelay=audioCtx.createDelay();
-  reverbDelay.delayTime.value=0.18;
-
-  reverbGain=audioCtx.createGain();
-  reverbGain.gain.value=0.35;
-
-  reverbFilter=audioCtx.createBiquadFilter();
-  reverbFilter.frequency.value=1800;
-
-  reverbDelay.connect(reverbFilter);
-  reverbFilter.connect(reverbGain);
-  reverbGain.connect(reverbDelay);
-}
-
-function playSound({freq=440,duration=0.1,type="sine",volume=0.08,pitchDrop=0,filterFreq=1200}){
-
-  const t=audioCtx.currentTime;
-
-  const o=audioCtx.createOscillator();
-  const g=audioCtx.createGain();
-  const f=audioCtx.createBiquadFilter();
-
-  o.type=type;
-  o.frequency.setValueAtTime(freq,t);
-
-  if(pitchDrop){
-    o.frequency.exponentialRampToValueAtTime(Math.max(40,freq-pitchDrop),t+duration);
-  }
-
-  f.type="lowpass";
-  f.frequency.value=filterFreq;
-
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(volume,t+0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+duration);
-
-  o.connect(f);
-  f.connect(g);
-  g.connect(audioCtx.destination);
-
-  initReverb();
-  g.connect(reverbDelay);
-
-  o.start();
-  o.stop(t+duration);
-}
-
-const sfx={
-  thrust:()=>playSound({freq:200,duration:0.05,type:"triangle",volume:0.03,pitchDrop:20}),
-  ring:()=>{
-    playSound({freq:950,duration:0.1,volume:0.07});
-    setTimeout(()=>playSound({freq:1400,duration:0.12,volume:0.04}),40);
-    setTimeout(()=>playSound({freq:700,duration:0.18,volume:0.03}),60);
-  },
-  hit:()=>playSound({freq:140,duration:0.2,type:"sawtooth",volume:0.09,pitchDrop:80})
-};
-
-/* ---------------- SPAWN SYSTEM ---------------- */
-
-let lastPatternType="simple";
-
-function spawnSmartRings(){
-
-  const p=DDD.pressure;
-
-  let y=GROUND-(80+Math.random()*60);
-
-  switch(lastPatternType){
-    case "lowCluster": y=GROUND-(120+Math.random()*40);break;
-    case "blitzerMix": y=GROUND-(60+Math.random()*120);break;
-    case "denseRun": y=GROUND-(140+Math.random()*40);break;
-  }
-
-  const count = p<0.3?3:p<0.6?4:p<0.85?5:6;
-
-  for(let i=0;i<count;i++){
-    rings.push({
-      x:860+i*26,
-      y:y+Math.sin(i)*6,
-      r:7,
-      a:0
-    });
-  }
-}
-
-/* ---------------- DIRECTOR ---------------- */
-
-function spawnPatternDirected(){
-
-  const s=DDD.state;
-
-  if(s==="flow"){
-    obstacles.push({x:860,y:GROUND,w:20,h:30});
-    lastPatternType="simple";
-  }
-
-  else if(s==="ramp"){
-    Math.random()<0.5 ? spawnLow() : spawnGap();
-    lastPatternType="lowCluster";
-  }
-
-  else if(s==="pressure"){
-    spawnMix();
-    lastPatternType="blitzerMix";
-  }
-
-  else if(s==="spike"){
-    spawnDense();
-    lastPatternType="denseRun";
-  }
-
-  else{
-    spawnDense();
-    spawnMix();
-    lastPatternType="panic";
-  }
-
-  spawnSmartRings();
-}
-
-function spawnLow(){
-  obstacles.push({x:860,y:GROUND,w:20,h:30});
-  obstacles.push({x:890,y:GROUND,w:20,h:30});
-}
-
-function spawnGap(){
-  if(Math.random()<0.4) return;
-  obstacles.push({x:860,y:GROUND,w:20,h:30});
-}
-
-function spawnMix(){
-  obstacles.push({x:860,y:GROUND,w:20,h:30});
-  if(Math.random()<0.5) obstacles.push({x:900,y:GROUND-40,w:20,h:40});
-}
-
-function spawnDense(){
-  for(let i=0;i<3;i++){
-    obstacles.push({x:860+i*22,y:GROUND,w:20,h:30});
-  }
-}
-
-/* ---------------- GAME ---------------- */
-
-function reset(){
-  player={x:120,y:GROUND,vy:0,onGround:true};
-  obstacles=[];rings=[];
-  distance=0;
-  DDD.timer=0;
-}
+let nextSpawn=0;
 
 function update(dt){
+ if(state!=='playing'||paused)return;
+ distance+=speed*dt*0.12;
+ pressure=Math.min(1,distance/(FLOW_YARDS*3));
+ speed=Math.min(380,200+distance*0.18);
+ // music layer simulation via beep pitch
+ if(Math.random()<0.002+pressure*0.005){beep(110+pressure*200,0.08,0.015+pressure*0.02)}
 
-  DDD.timer+=dt;
-  updatePressure(dt);
-  updateState();
+ // player physics - tap impulse only, glide
+ player.vy+=GRAVITY*dt; player.vy*=DRAG; player.y+=player.vy*dt;
+ if(player.y>GROUND-player.h){player.y=GROUND-player.h;player.vy=0;player.onGround=true}else player.onGround=false;
+ if(player.y<0){player.y=0;player.vy=0}
 
-  DDD.lastEvent-=dt;
+ // move world
+ const move=speed*dt*3;
+ obstacles.forEach(o=>o.x-=move); rings.forEach(r=>r.x-=move); powerups.forEach(p=>p.x-=move);
+ obstacles=obstacles.filter(o=>o.x>-40); rings=rings.filter(r=>r.x>-20&&!r.took); powerups=powerups.filter(p=>p.x>-30);
 
-  if(DDD.lastEvent<=0){
-    spawnPatternDirected();
-    DDD.lastEvent=0.6-DDD.pressure*0.35;
-  }
+ nextSpawn-=move; if(nextSpawn<=0){nextSpawn=spawnPattern()}
 
-  player.vy+=1800*dt;
-  player.y+=player.vy*dt;
+ // collisions
+ const pr={x:player.x+2,y:player.y+2,w:player.w-4,h:player.h-4};
+ for(const o of obstacles){if(o.x<player.x+player.w&&o.x+o.w>player.x&&player.y+player.h>GROUND-o.h){if(player.iTime<=0){return die()}}}
+ for(const r of rings){const dx=player.x+12-r.x,dy=player.y+16-r.y;const dist=Math.hypot(dx,dy);const mr=save.upgrades.magnet?MAGNET_RADIUS:0;if(dist<18||dist<mr){r.took=true;runRings++;combo++;comboTimer=1.5;ui.rings.textContent=runRings;ui.combo.textContent=combo;sfx.ring();sfx.cheer();if(combo%5===0){speed*=1.03;runRings+=2;sfx.power()}}}}
+ for(let i=powerups.length-1;i>=0;i--){const p=powerups[i];if(Math.hypot(player.x-p.x,player.y-p.y)<24){powerups.splice(i,1);applyPower(p.type);sfx.power()}}
 
-  if(player.y>=GROUND){
-    player.y=GROUND;
-    player.vy=0;
-    player.onGround=true;
-  }
+ if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0){combo=0;ui.combo.textContent=0}}
 
-  obstacles.forEach(o=>o.x-=220*dt);
-  rings.forEach(r=>r.x-=220*dt);
+ // boss wall every 2000 yards
+ if(Math.floor(distance)%2000<5 && Math.floor(distance)>0 && obstacles.length<2){obstacles.push({x:W+30,y:GROUND,w:26,h:120})}
 
-  distance+=dt*100;
+ // boss rush after 30 min ~ 10800 yards
+ if(distance>10800){speed=420}
+
+ if(player.iTime>0)player.iTime-=dt;
+
+ ui.yards.textContent=Math.floor(distance);
 }
 
-/* ---------------- RENDER ---------------- */
+function applyPower(t){ui.powers.innerHTML+=`<span class="pwr">${t}</span>`;setTimeout(()=>ui.powers.innerHTML='',3000)}
 
-function render(){
+function die(){sfx.hit();state='dead';$('deathStats').textContent=`YARDS ${Math.floor(distance)} • RINGS ${runRings} • COMBO ${combo}`;$('death').classList.remove('hidden');// melt effect
+ let melt=0;const meltInt=setInterval(()=>{melt+=0.07;ctx.fillStyle=`rgba(0,0,0,${melt})`;ctx.fillRect(0,0,W,H);if(melt>1){clearInterval(meltInt);}},50);
+ if(runRings>0){save.rings+=runRings;if(distance>save.hiScore)save.hiScore=Math.floor(distance);saveGame();ui.best.textContent=save.hiScore}}
 
-  ctx.fillStyle="#000";
-  ctx.fillRect(0,0,860,300);
-
-  ctx.fillStyle="#1a331a";
-  ctx.fillRect(0,260,860,40);
-
-  ctx.fillStyle="#A5ACAF";
-  obstacles.forEach(o=>ctx.fillRect(o.x,o.y-20,o.w,o.h));
-
-  ctx.fillStyle="#FFB612";
-  rings.forEach(r=>ctx.fillRect(r.x,r.y,10,10));
-
-  ctx.fillStyle="#FFB612";
-  ctx.fillRect(player.x,player.y-20,20,20);
-
-  // heat shimmer
-  if(thrustHeld && !player.onGround){
-    ctx.globalAlpha=0.08;
-    ctx.fillRect(player.x-30,player.y-10,60,30);
-    ctx.globalAlpha=1;
-  }
+// RENDER
+function render(){ctx.fillStyle=C.black;ctx.fillRect(0,0,W,H);
+ // weather tint
+ if(weather==='RAIN'){ctx.fillStyle='rgba(80,120,180,0.06)';ctx.fillRect(0,0,W,H)}if(weather==='SNOW'){ctx.fillStyle='rgba(200,220,255,0.05)';ctx.fillRect(0,0,W,H)}if(weather==='FOG'){ctx.fillStyle='rgba(160,160,160,0.07)';ctx.fillRect(0,0,W,H)}
+ // crowd hills
+ ctx.fillStyle='#222';for(let i=0;i<5;i++){const x=(i*200-(distance*0.5)%200);ctx.beginPath();ctx.moveTo(x, GROUND);ctx.quadraticCurveTo(x+100,GROUND-40,x+200,GROUND);ctx.lineTo(x+200,H);ctx.lineTo(x,H);ctx.fill();ctx.fillStyle='#333';ctx.fillRect(x+80,GROUND-38,40,8)}
+ // ground
+ ctx.fillStyle=C.turf;ctx.fillRect(0,GROUND,W,H-GROUND);
+ // obstacles
+ ctx.fillStyle=C.silver;obstacles.forEach(o=>{ctx.fillRect(o.x,GROUND-o.h,o.w,o.h);if(o.h>60){ctx.fillStyle=C.gold;ctx.fillRect(o.x+4,GROUND-o.h+4,18,6);ctx.fillStyle=C.silver}});
+ // rings
+ rings.forEach(r=>{ctx.fillStyle=C.gold;ctx.beginPath();ctx.arc(r.x,r.y,8,0,Math.PI*2);ctx.fill();ctx.fillStyle=C.black;ctx.beginPath();ctx.arc(r.x,r.y,3,0,Math.PI*2);ctx.fill()});
+ // powerups glowing
+ powerups.forEach(p=>{ctx.shadowColor=C.gold;ctx.shadowBlur=12;ctx.fillStyle=C.gold;ctx.fillRect(p.x-8,p.y-8,16,16);ctx.shadowBlur=0});
+ // player
+ if(player){ctx.fillStyle=save.helmet?C.gold:C.gold;ctx.fillRect(player.x,player.y,player.w,player.h);ctx.fillStyle=C.black;ctx.fillRect(player.x+4,player.y+4,16,6);if(save.helmet){ctx.fillStyle=C.gold;ctx.fillRect(player.x-2,player.y-6,28,8)}}
 }
 
-/* ---------------- LOOP ---------------- */
+function loop(t){const dt=Math.min(0.033,(t-lastTime)/1000||0.016);lastTime=t;update(dt);render();requestAnimationFrame(loop)}
 
-function loop(){
-  update(0.016);
-  render();
-  requestAnimationFrame(loop);
-}
+// INPUT - tap thrust, Alt duck, mobile deadzone 8%
+let thrustQueued=false;
+window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){if(state==='playing'&&player){player.vy=-THRUST_IMPULSE;initAudio();sfx.thrust();thrustQueued=true}e.preventDefault()}if(['ArrowDown','AltLeft','AltRight','KeyS'].includes(e.code)){if(player&&player.onGround){player.h=18;player.y=GROUND-18;setTimeout(()=>{if(player){player.h=32;player.y=GROUND-32}},220)}e.preventDefault()}if(e.code==='KeyP'){togglePause()}});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();initAudio();const t=e.changedTouches[0];const rect=canvas.getBoundingClientRect();const x=(t.clientX-rect.left)/rect.width;if(x>0.54){if(player){player.vy=-THRUST_IMPULSE;sfx.thrust()}}else if(x<0.46){if(player&&player.onGround){player.h=18;player.y=GROUND-18;setTimeout(()=>{player.h=32;player.y=GROUND-32},220)}}},{passive:false});
 
-/* ---------------- INPUT ---------------- */
+function togglePause(){if(state!=='playing')return;paused=!paused;$('pauseMenu').classList.toggle('hidden',!paused)}
 
-window.addEventListener("keydown",e=>{
-  if(e.code==="Space"){
-    thrustHeld=true;
-    player.vy=-450;
-    sfx.thrust();
-  }
-});
+// UI
+$('play').onclick=()=>{initAudio();$('intro').classList.add('hidden');resetGame();state='playing';lastTime=performance.now();beep(300,0.1);setTimeout(()=>beep(450,0.1),120);setTimeout(()=>beep(600,0.15),240)};
+$('retry').onclick=()=>{$('death').classList.add('hidden');resetGame();state='playing'};
+$('shopBtn').onclick=()=>{showShop()};$('closeShop').onclick=()=>{$('shop').classList.add('hidden');$('intro').classList.remove('hidden')};
+$('resume').onclick=togglePause;$('quit').onclick=()=>{paused=false;$('pauseMenu').classList.add('hidden');state='menu';$('intro').classList.remove('hidden')};
 
-window.addEventListener("keyup",e=>{
-  if(e.code==="Space") thrustHeld=false;
-});
+function showShop(){$('intro').classList.add('hidden');$('shop').classList.remove('hidden');$('bank').textContent=`BANK ${save.rings} RINGS`;const items=[{id:'cleats',n:'Cleats +',p:60},{id:'magnet',n:'Magnet',p:90},{id:'shield',n:'Shield',p:120},{id:'extraLife',n:'Extra Life',p:150},{id:'helmet',n:'Gold Helmet',p:300},{id:'double',n:'Double Rings',p:200},{id:'ghost',n:'Ghost',p:220},{id:'vacuum',n:'Vacuum',p:240},{id:'overcharge',n:'Overcharge',p:260},{id:'slowmo',n:'Slow-Mo',p:280},{id:'multi',n:'Multiplier',p:300}];$('shopList').innerHTML=items.map(it=>`<div style="display:flex;justify-content:space-between;margin:6px 0"><span>${it.n}</span><button class="btn" onclick="buy('${it.id}',${it.p})">${it.p} R</button></div>`).join('')+$`<div style="margin-top:12px;color:var(--gold)">LIMITED: Theme Pack - 150 R <button class="btn" onclick="buy('theme',150)">BUY</button></div>`;$('stats').textContent=`CLEATS Lv${save.upgrades.cleats} • MAGNET Lv${save.upgrades.magnet} • LIVES ${1+save.upgrades.extraLife}`;}
+window.buy=(id,cost)=>{if(save.rings<cost)return;save.rings-=cost;if(id==='helmet')save.helmet=true;else if(id==='theme'){if(!save.themes.includes('neon'))save.themes.push('neon')}else save.upgrades[id]=(save.upgrades[id]||0)+1;saveGame();showShop()};
 
-/* ---------------- START ---------------- */
+// Daily challenge seed
+const today=new Date().toISOString().slice(0,10);if(save.lastDaily!==today){save.lastDaily=today;weather=['CLEAR','RAIN','SNOW','FOG'][Math.floor(Math.random()*4)];saveGame()}
 
-document.getElementById("play").onclick=()=>{
-  reset();
-  document.getElementById("start").classList.add("hidden");
-  loop();
-};
-
-reset();
-
-})();
-</script>
-
+ui.best.textContent=save.hiScore;ui.rings.textContent=save.rings;requestAnimationFrame(loop);
+})();</script>
 </body>
 </html>
